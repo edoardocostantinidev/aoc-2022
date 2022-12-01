@@ -1,19 +1,22 @@
 fn main() {
-    println!("{}", iterator_approach())
+    println!("1-1 - {}", max_calories_per_number_of_elves(1));
+    println!("1-2 - {}", max_calories_per_number_of_elves(3));
 }
 
-fn iterator_approach() -> i64 {
-    std::fs::read_to_string("./input")
+fn max_calories_per_number_of_elves(number_of_elves: usize) -> i64 {
+    let mut s = std::fs::read_to_string("./input")
         .unwrap()
-        .split('\n')
-        .map(|s| (s.parse::<i64>().unwrap_or(-1), -1))
-        .reduce(|(current_count, current_max), (elem, _)| match elem {
-            -1 if current_count > current_max => {
-                return (0, current_count);
-            }
-            -1 => (0, current_max),
-            _ => (elem + current_count, current_max),
+        .split("\n\n")
+        .map(|calories_per_elf| {
+            calories_per_elf
+                .to_owned()
+                .split("\n")
+                .filter(|s| !s.is_empty())
+                .map(|s| s.parse::<i64>().unwrap())
+                .sum()
         })
-        .unwrap_or_default()
-        .1
+        .collect::<Vec<i64>>();
+
+    s.sort();
+    s.iter().rev().take(number_of_elves).sum()
 }
