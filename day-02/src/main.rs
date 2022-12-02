@@ -1,5 +1,6 @@
 use core::panic;
 
+// you could technically do two matches with all the possibilities
 fn main() {
     println!("2-1 - {}", rock_paper_scissor("./input"));
     println!("2-2 - {}", rock_paper_scissor_rigged("./input"));
@@ -26,9 +27,6 @@ fn rock_paper_scissor_rigged(file: &str) -> i64 {
         .sum()
 }
 
-/*
-
-*/
 fn rig(game: &str) -> String {
     let pick: char = game.as_bytes()[0].into();
     let expected_result: char = game.as_bytes()[2].into();
@@ -66,19 +64,6 @@ fn get_loss(c: char) -> char {
         _ => panic!("wtf is {c}"),
     }
 }
-
-/*
-X = A = Rock
-Y = B = Paper
-Z = C = Scissor
-
-wins:
-A Y
-B Z
-C X
-losses:
-A _
-*/
 
 fn game_to_points(game: &str) -> i64 {
     let elf = game.as_bytes()[0].into();
