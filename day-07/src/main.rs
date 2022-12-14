@@ -6,109 +6,87 @@ fn main() {
 }
 
 fn day_07_1(f: &str) -> usize {
-    let x = std::fs::read_to_string(f)
-        .unwrap()
-        .split('\n')
-        .filter(|s| !s.is_empty())
-        .map(|l| l.into())
-        .fold(
-            Acc {
-                scanned_dirs: vec![],
-                ..Default::default()
-            },
-            |acc: Acc, line: Line| match line {
-                Line::CommandLine(Command::Ls) => Acc {
-                    scanned_dirs: acc.scanned_dirs,
-                    last_dir_visited: None,
-                    current_dir_being_scanned: acc.last_dir_visited,
-                },
-                Line::CommandLine(Command::Cd(dir)) => {
-                    if dir == "..".to_owned() {
-                        Acc
+    let mut current_dir = "/".to_owned();
+    let file = std::fs::read_to_string(f).unwrap();
+    let lines = file.split('\n');
+    let mut sizes = HashMap::<String, usize>::new();
+    let mut listing = false;
+    let mut last_dir = None;
+    for line in lines {
+        if line == "" {
+            continue;
+        }
+        if line.starts_with('$') {
+            listing = false;
+        }
+
+        if !listing {
+            match &line[0..4] {
+                "$ cd" => {
+                    if line == "$ cd ..".to_owned() {
+                        current_dir = last_dir.clone().unwrap_or("".to_owned());
                     } else {
-                        if let Acc {
-                            current_dir_being_scanned: Some(scanned_dir),
-                            ..
-                        } = acc
-                        {
-                            let mut sd = acc.scanned_dirs;
-                            sd.push(scanned_dir);
-                            Acc {
-                                scanned_dirs: sd,
-                                current_dir_being_scanned: None,
-                                last_dir_visited: Some(Directory {
-                                    name: dir,
-                                    ..Default::default()
-                                }),
-                            }
-                        } else {
-                            Acc {}
+                        last_dir = Some(current_dir.clone());
+                        let new_dir = line.split_ascii_whitespace().last().unwrap();
+                        if new_dir != "/".to_owned() {
+                            let new_path = format!("{}{}/", current_dir, new_dir);
+
+                            current_dir = new_path;
                         }
                     }
                 }
-                Line::OutputLine(Item::File(size, name)) => {}
-                Line::OutputLine(Item::Folder(name)) => {}
-            },
-        );
-    dbg!(x);
-    0
+                "$ ls" => {
+                    listing = true;
+                }
+
+                _ => {
+                    panic!("shouldn't be here")
+                }
+            }
+        } else {
+            let x = line.split_ascii_whitespace().collect::<Vec<&str>>()[0];
+            match &x[0..3] {
+                "dir" => {}
+                _ => {
+                    let file_size: usize = x.split_ascii_whitespace().collect::<Vec<&str>>()[0]
+                        .parse()
+                        .unwrap();
+
+                    *sizes.entry(current_dir.to_owned()).or_insert(0) += file_size;
+                }
+            }
+        }
+    }
+
+    let keys = sizes
+        .clone()
+        .keys()
+        .filter_map(|s| {
+            if sizes[s] <= 100000 {
+                return Some(s.clone());
+            }
+            None
+        })
+        .collect::<Vec<String>>();
+
+    sizes
+        .iter()
+        .filter(|x| x.1 <= &100000)
+        .map(|x| {
+            keys.iter()
+                .filter_map(|k| {
+                    if x.0.contains(k) {
+                        return Some(x.1);
+                    }
+                    None
+                })
+                .sum::<usize>()
+        })
+        .sum()
 }
 
 fn day_07_2(f: &str) -> usize {
     todo!()
-}
-
-#[derive(Default, Debug)]
-struct Acc {
-    pub scanned_dirs: Vec<Directory>,
-    pub last_dir_visited: Option<Directory>,
-    pub current_dir_being_scanned: Option<Directory>,
-}
-
-#[derive(Debug, Default, Clone)]
-struct Directory {
-    pub name: String,
-    pub dirs: Vec<Directory>,
-    pub files: Vec<File>,
-    pub size: usize,
-}
-
-#[derive(Debug, Clone)]
-struct File {
-    pub size: usize,
-    pub name: String,
-}
-
-#[derive(Debug)]
-enum Line {
-    CommandLine(Command),
-    OutputLine(Item),
-}
-
-impl From<&str> for Line {
-    fn from(l: &str) -> Self {
-        match l.split_at(4) {
-            ("$ cd", dir) => Self::CommandLine(Command::Cd(dir.to_owned())),
-            ("$ ls", _) => Self::CommandLine(Command::Ls),
-            ("dir ", name) => Self::OutputLine(Item::Folder(name.to_owned())),
-            (_first, _second) => {
-                let elems: Vec<&str> = l.split_ascii_whitespace().collect();
-                Self::OutputLine(Item::File(elems[0].parse().unwrap(), elems[1].to_owned()))
-            }
-        }
-    }
-}
-
-#[derive(Debug)]
-enum Item {
-    Folder(String),
-    File(usize, String),
-}
-
-#[derive(Debug)]
-enum Command {
-    Cd(String),
-    Ls,
 }
 
 #[cfg(test)]
