@@ -75,7 +75,7 @@ fn day_07_1(f: &str) -> usize {
         .map(|x| {
             keys.iter()
                 .filter_map(|k| {
-                    if x.0.contains(k) {
+                    if x.0.starts_with(k) {
                         return Some(x.1);
                     }
                     None
